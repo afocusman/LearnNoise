@@ -1,10 +1,10 @@
 function [cor_out, npow, freq] = smooth(cor, delta, halfwidth)
 
 npts = length(cor);
-
+halfwidth = floor(halfwidth / delta); % n points in frequency domain(integer)
 
 % run abs mean in spcetral domain
-npow = 2 ^ max(nextpow2(npts), 13);
+npow = 2 ^ max(nextpow2(npts), 15);
 freq =  (0 : (npow/2)) / (delta * npow);
 
 spec_cor     = ifft(cor, npow);
@@ -23,9 +23,11 @@ amp_whiten(npow - halfwidth + 1 : npow) = 0;
 
 % fft --> ifft
 cor_whiten = fft(amp_whiten, npow);
-
 cor_out = 2 * real(cor_whiten(1 : (npts-1) / 2)) ./ npow;
 
+% normalize
+maximum = max(abs(cor_out));
+cor_out = cor_out / maximum;
 
 end
 
