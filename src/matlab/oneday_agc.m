@@ -1,32 +1,41 @@
 clear;
 clc;
 dbstop if error;
+tic
 %------------------------------------------------------------------
 % parameters
 length_agc = 15; % agc window
-
-dir = '/Users/LeafRiver/Documents/Fun/Noise/Data/XF/H1320';
-append =                                    '_tr_XF.H1320.01.BHZ.SAC';
 %------------------------------------------------------------------
-for hour = 1 : 24
-    % load data
-    if (hour <= 9) % handle hour 01~09
-        zero = '0';
-    else
-        zero = '';
-    end
-    in   =  strcat(dir, '/ft_sw_',     zero, num2str(hour), append);
-    out  =  strcat(dir, '/agc_ft_sw_', zero, num2str(hour), append);
-    %------------------------------------------------------------------
-    [time, vel] = readsac(in);
-    delta = time(2) - time(1);
+% data location
+datadir = '/Users/LeafRiver/Documents/Fun/Noise/Data/XF/H0720';
+%-----------------------------------------------------------------
+% daily agc
+monthsdir = strcat(datadir, '/', '200*');
+months = dir(monthsdir);
+for nmonth = months'
+    daysdir = strcat(datadir, '/', nmonth.name, '/', '200*_*_*');
+    days = dir(daysdir);
+    for nday = days'
+        in  = strcat(datadir,'/',nmonth.name,'/',nday.name,    '/ft_sw_tr_',nday.name,'.SAC');
+        out = strcat(datadir,'/',nmonth.name,'/',nday.name,'/agc_ft_sw_tr_',nday.name,'.SAC');
     %------------------------------------------------------------------
     % AGC
-    agc_vel = gain(vel, delta, 'agc', length_agc, 1);
-    %------------------------------------------------------------------
-    % write output
-    lag_length = length(agc_vel) - 1;
-    lag = 0 : delta : lag_length * delta;
-    status = writesac(lag, agc_vel, out);
-
+    status = agc(in, out, length_agc);
+    end
 end
+
+% monthly agc
+for nmonth = months'
+    in  = strcat(datadir,'/',nmonth.name,    '/sk_',nmonth.name,'.SAC');
+    out = strcat(datadir,'/',nmonth.name,'/agc_sk_',nmonth.name,'.SAC');
+    %------------------------------------------------------------------
+    % AGC
+    status = agc(in, out, length_agc);
+end
+
+% yearly agc
+in  = strcat(datadir,     '/sk.SAC');
+out = strcat(datadir, '/agc_sk.SAC');
+status = agc(in, out, length_agc);
+%------------------------------------------------------------------
+toc
